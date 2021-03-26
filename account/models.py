@@ -42,6 +42,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=50)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    is_supplier = models.BooleanField(default=False)
 
     objects = UserManager()
 
@@ -52,7 +53,6 @@ class Profile(models.Model):
     owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user')
     image = models.ImageField(upload_to=image_file_path, null=True, blank=True)
     is_active = models.BooleanField(default=False)
-    is_supplier = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.owner)

@@ -13,6 +13,8 @@ class SignUpPermission(BasePermission):
         user = request.user
         if user.is_anonymous:
             return True
+        else:
+            return False
 
 
 class IsOwner(BasePermission):

@@ -1,4 +1,5 @@
-from rest_framework import generics, status
+from django.http import HttpResponse
+from rest_framework import generics, status, mixins
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.decorators import action
 from rest_framework.settings import api_settings
@@ -10,7 +11,7 @@ from django.contrib.auth import get_user_model
 
 from .models import Profile
 from .serializer import UserSerializer, TokenSerializer, UserDetailSerializer, ProfileSerializer, \
-    ChangePasswordSerializer, ProfileListSerializer
+    ChangePasswordSerializer, ProfileListSerializer, SignUpSerializer
 from .permissions import SuperUserPermission, SignUpPermission, IsOwner
 
 
@@ -26,33 +27,33 @@ class UserView(viewsets.ModelViewSet):
             return self.serializer_class
 
 
-class ProfileView(viewsets.ModelViewSet):
-    serializer_class = ProfileSerializer
+class ProfileView(viewsets.GenericViewSet,
+                  mixins.RetrieveModelMixin,
+                  mixins.ListModelMixin,
+                  mixins.UpdateModelMixin):
     queryset = Profile.objects.all()
-    permission_classes = [permissions.IsAuthenticated, IsOwner]
-
-    def create(self, request, *args, **kwargs):
-        pass
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
         if self.action == 'list':
             self.permission_classes = [SuperUserPermission]
-
-        return [permission() for permission in self.permission_classes]
+        elif self.action == 'retrieve':
+            self.permission_classes = [IsOwner]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action == 'set_password':
             return ChangePasswordSerializer
-        if self.action == 'list':
+        elif self.action == 'list':
             return ProfileListSerializer
-        return self.serializer_class
+        else:
+            return ProfileSerializer
 
     @action(detail=True, methods=['post', 'get'])
     def set_password(self, request, pk=None):
         user = self.request.user
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            print(serializer.data)
             user.set_password(serializer.data['new_password'])
 
             user.save()
@@ -62,7 +63,12 @@ class ProfileView(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
-class TokenApiView(ObtainAuthToken):
-    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
-    serializer_class = TokenSerializer
+# class TokenApiView(ObtainAuthToken):
+#     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+#     serializer_class = TokenSerializer
+#     permission_classes = [SignUpPermission]
+#
+
+class RegisterView(generics.CreateAPIView):
+    serializer_class = SignUpSerializer
     permission_classes = [SignUpPermission]

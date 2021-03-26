@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.db import models
-from account.models import Supplier
+
+from account.models import Supplier, Profile
 
 
 class Product(models.Model):
@@ -43,8 +45,19 @@ class SubCategory(models.Model):
 
 class Tag(models.Model):
     title = models.CharField(max_length=15)
-    product = models.ManyToManyField(Product)
+    product = models.ManyToManyField(Product, related_name='tags')
 
     def __str__(self):
         return self.title
 
+
+class Comment(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True,
+                             related_name='profile')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='comments')
+    body = models.TextField(max_length=300)
+    approved = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.body

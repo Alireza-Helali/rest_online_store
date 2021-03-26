@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import get_user_model, authenticate, login
 
 from account.models import Profile
 
@@ -15,7 +15,22 @@ class TokenSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError('unable to provide user with provided data', code='authentication')
         attrs['user'] = user
+        login(self.context.get('request'), user)
         return attrs
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['email', 'password']
+        extra_kwargs = {
+            'password': {'write_only': True, 'min_length': 5,
+                         'style': {'input_type': 'password'}, 'trim_whitespace': False
+                         },
+        }
+
+    def create(self, validated_data):
+        return get_user_model().objects.create_user(**validated_data)
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -40,7 +55,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
 
 class ProfileListSerializer(serializers.HyperlinkedModelSerializer):
-    owner = serializers.StringRelatedField(source='owner.name')
+    owner = serializers.StringRelatedField()
 
     class Meta:
         model = Profile
@@ -63,6 +78,7 @@ class ChangePasswordSerializer(serializers.Serializer):
                                          write_only=False)
     confirm_password = serializers.CharField(min_length=5, style={'input_type': 'password'}, required=True,
                                              write_only=False)
+
 
     def validate(self, attrs, **kwargs):
         request = self.context.get('request')
