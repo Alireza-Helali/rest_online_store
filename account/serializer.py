@@ -79,7 +79,6 @@ class ChangePasswordSerializer(serializers.Serializer):
     confirm_password = serializers.CharField(min_length=5, style={'input_type': 'password'}, required=True,
                                              write_only=False)
 
-
     def validate(self, attrs, **kwargs):
         request = self.context.get('request')
         user = request.user

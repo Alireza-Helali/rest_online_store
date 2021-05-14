@@ -9,6 +9,9 @@ class ShopCart(models.Model):
     payment_date = models.DateField(blank=True, null=True)
     is_paid = models.BooleanField(default=False)
 
+    def __str__(self):
+        return str(self.owner)
+
     @property
     def cart_length(self):
         return self.cart_item.count()
